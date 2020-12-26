@@ -1,0 +1,428 @@
+[ansible playbooks]
+pb1
+creating user and copy
+
+---
+- name: create user and copy
+  hosts: all
+  tasks:
+   - name: create user
+     user:
+      name: peddireddy
+      password: peddireddy
+      home: /home/peddireddy
+
+
+   - name: copy
+     copy:
+      src: /etc/passwd
+      dest: /home/peddireddy
+
+...
+To run above playbook using below command
+# ansible-playbook pb1.yml 
+
+pb2
+CREATING A FILE
+
+
+---
+- name: create a file
+  hosts: all
+  tasks:
+   - name: create a file on server
+     file:
+      name: /tmp/pedi13
+      state: touch
+
+...
+To run above playbook using below command
+# ansible-playbook pb2.yml
+
+pb3
+copy files manage node to others
+
+---
+- name: copy files manage nodes to others
+  hosts: 172.31.22.174
+  tasks:
+   - name: fetch file from server1 to controler
+     fetch:
+      src: file250
+      dest: /tmp
+...
+To run above playbook using below command
+# ansible-playbook pb3.yml
+
+pb4 
+==CONFIGURE TOMCAT SETUP==
+---
+- name: install tomcat server
+  hosts: all
+  become: true
+  tasks:
+   - name: install tomcat9
+     apt:
+      name: tomcat9
+      state: present
+
+   - name: install tomcat9-admin
+     apt:
+      name: tomcat9-admin
+      state: present
+      update_cache: yes
+
+   - name: copy tomcat xml file
+     copy:
+      src: tomcat-users.xml
+      dest: /etc/tomcat9
+
+
+
+   - name: changing the port
+     replace:
+      regexp: 9090
+      replace: 7070
+      dest: /etc/tomcat9/server.xml
+
+   - name: restart the service
+     service:
+      name: tomcat9
+      state: restarted
+
+   - name: pause playbook for sometime
+     pause:
+      minutes: 1
+
+   - name: check the url are reachable
+     uri:
+      url: http://3.133.98.74/
+      status_code: 200
+...
+To run above playbook using below command
+# ansible-playbook pb5.yml
+	  
+==>CREATING XML FILE<==
+vim tomcat-users.xml 
+<tomcat-users>
+        <user username="admin" password="admin" roles="manager-script"/>
+</tomcat-users>
+
+
+pb6 ==>using globla variables
+install software application using variables
+
+---
+ - name: install software application using variable
+   hosts: all
+   tasks:
+    - name: install software applicaton
+      apt:
+       name: "{{a}}"
+       state: "{{b}}"
+       update_cache: "{{c}}"
+...
+==command to run a above playbook==
+ansible-playbook playbook.yml --extra-vars "a=tomcat9 b=present c=yes"
+
+pb6
+creating a user file,directories
+
+---
+- name: creating a user file,directories
+  hosts: all
+  become: true
+  tasks:
+   - name: creating user
+     user:
+      name: "{{a}}"
+      password: "{{b}}"
+      home: "{{c}}"
+
+   - name: create file or directorie
+     file:
+      name: "{{d}}"
+      state: "{{e}}"
+...
+
+==command to run a above playbook==
+ansible-playbook palybook.yml --extra-vars "a=peddi b=peddi c=/home/ubuntu d=file1 e=touch"
+
+pb7 ==VARIABLES==
+install software applications 
+
+---
+- name: install software appications
+  hosts: all
+  become: true
+  vars:
+   - a: tomcat9
+   - b: present
+   - c: yes
+  tasks:
+   - name: install software
+     apt:
+      name: "{{a}}"
+      sate: "{{b}}"
+      update_cache: "{{c}}"
+...
+==command==
+==command to run a above playbook==
+ansible-playbook playbook.yml
+
+
+PLAYBOOK
+==print a message==example=
+
+---
+- name: print a message on servers
+  hosts: all
+  become: true
+  vars:
+   greeting: Hello world!
+  tasks:
+   - name: print message
+     debug:
+      msg: "{{greeting}}"
+	  
+...
+==command to run a above playbook==
+ansible-playbook playbook.yml
+
+playbook
+
+The playbook below shows a variable called continents. The variable holds 5 different values – continent names. Each of these values can easily be accessed using index 0 as the first variable.
+
+The example of the playbook below retrieves and displays Asia (Index 1).
+
+---
+- name: print a continents
+  hosts: all
+  become: true
+  vars:
+   continents:
+    - africa
+    - asia
+    - south america
+    - north america
+    - europe
+  tasks:
+   - name: print a perticular continent
+     debug:
+      msg: "{{continents [1]}}"
+...
+To list all the items on the list, use the with_items module. This will loop through all the values in the array
+
+---
+- name: print a continents
+  hosts: all
+  become: true
+  vars:
+   continents: [Africa, Asia, South America, North America, Europe]
+  tasks:
+   - name: print all continents
+     debug:
+      msg: "{{item}}"
+     with_items:
+      - "{{continents}}"
+...
+==command to run a above playbook==
+ansible-playbook playbook.yml
+
+
+==LOOPING==
+
+install software applications
+
+---
+- name: installing software applications
+  hosts: all
+  become: true
+  tasks:
+   - name: multipule software installations
+     apt:
+      name: "{{item}}"
+      state: present
+      update_cache: yes
+     with_items:
+      - git
+      - maven
+      - tree
+      - openjdk-8-jdk
+...
+==command==
+ansible-playbook playbook.yml
+
+
+==DOCKER CONFIGURATION==
+
+---
+- name: configure docker in all servers
+  hosts: all
+  become: true
+  tasks:
+   - name: install required system packages
+     apt:
+      name: 'curl'
+      state: latest
+
+   - name: add docker GPG apt key
+     apt_key:
+      url: https://download.docker.com/linux/ubuntu/gpg
+      state: present
+
+   - name: add docker repository
+     apt_repository:
+      repo: deb https://download.docker.com/linux/ubuntu bionic stable
+      state: present
+
+   - name: update apt and install docker
+     apt:
+      name: docker
+      state: latest
+      update_cache: yes
+
+   - name: install docker module for python
+     pip:
+      name: docker
+      state: latest
+
+   - name: pull image from docker hub
+     docker_image:
+      name: centos
+      source: pull
+      state: present
+
+...
+
+==command to run a above playbook==
+ansible-playbook playbook.yml
+
+
+PALYBOOK
+==install maven WHEN condition satisfied==
+
+---
+- name: inatall maven when condition satisfied
+  hosts: all
+  become: true
+  vars:
+   - a: 10
+  tasks:
+   - name: install maven
+     apt:
+      name: maven
+      state: present
+     when: a==10
+...
+==command to run a above playbook==
+ansible-playbook playbook.yml
+
+
+Play YBOOK
+== if specific folder is present in server if we can  create or not same folder in servers
+     by using this playbook we will know create or not
+
+
+---
+- name: if a specific folder is present
+  hosts: all
+  tasks:
+   - name: check for a folder
+     stat:
+      path: /home/ubuntu/peddi
+     register: a
+
+   - name: display output of the above module
+     debug:
+      var: a
+
+   - name: create a file peddi if folder peddi is not present
+     file:
+      name: /home/ubuntu/peddi
+      state: touch
+     when: a.stat.exists == false
+...
+
+==command to run a above playbook==
+ansible-playbook playbook.yml
+
+playbook
+==restart a docker using WHEN module==
+
+---
+- name: restrat docker on servers
+  hosts: all
+  become: true
+  tasks:
+   - name: check for docker
+     stat:
+      path: /home/ubuntu
+     register: a
+
+   - name: display output of above module
+     debug:
+      var: a
+
+   - name: restart docker
+     service:
+      name: docker
+      state: restarted
+     when: a.stat.exists ==  true
+...
+==command to run a above playbook==
+ansible-playbook playbook.yml
+
+
+playbook 
+==tagging in ansible==
+
+---
+- name: tagging in ansible
+  hosts: all
+  become: true
+  tasks:
+   - name: clone git repository
+     git:
+      repo: https://github.com/peddi130894/ci-cd.git
+      dest: /tmp/newgit
+     tags: git_clone
+
+   - name: create a user
+     user:
+      name: peddi1308
+      password: peddi1308
+     tags: user_creation
+
+   - name: copy password file
+     copy:
+      src: /etc/passwd
+      dest: /tmp
+...
+
+palybook
+== implementing handler in ansible==
+
+---
+- name: implemeting handler in ansible
+  hosts: all
+  become: true
+  tasks:
+   - name: installing apache2
+     apt:
+      name: apache2
+      state: latest
+
+   - name: editing the index.html
+     copy:
+      content: "welcome to ansible handlers\n"
+      dest: /var/www/html/index.html
+     notify: restart apache2
+  handlers:
+   - name: restart apache2
+     service:
+      name: apache2
+      state: restarted
+
+
+
